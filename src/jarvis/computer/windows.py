@@ -7,7 +7,7 @@ import platform
 from collections.abc import Iterable
 from ctypes import wintypes
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol, cast
 
 from jarvis.computer.errors import (
     ComputerValidationError,
@@ -66,7 +66,7 @@ class CtypesWindowsApi:
 
     def __init__(self) -> None:
         try:
-            self._user32 = ctypes.windll.user32
+            self._user32 = cast(Any, ctypes).windll.user32
         except AttributeError as exc:
             raise UnsupportedPlatformError("native window control requires Windows") from exc
 

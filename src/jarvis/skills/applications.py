@@ -11,7 +11,7 @@ import subprocess
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from jarvis.computer.applications import sanitized_child_environment
 from jarvis.skills.base import RiskLevel, Skill, SkillResult
@@ -50,10 +50,13 @@ def _windows_system_directory() -> Path:
         raise OSError("The Windows system directory is unavailable on this platform")
 
     buffer = ctypes.create_unicode_buffer(32_768)
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32 = cast(Any, ctypes).WinDLL("kernel32", use_last_error=True)
     length = kernel32.GetSystemDirectoryW(buffer, len(buffer))
     if length == 0 or length >= len(buffer):
-        raise OSError(ctypes.get_last_error(), "Could not resolve the Windows system directory")
+        raise OSError(
+            cast(Any, ctypes).get_last_error(),
+            "Could not resolve the Windows system directory",
+        )
 
     directory = Path(buffer.value)
     if not directory.is_absolute():
