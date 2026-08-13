@@ -694,26 +694,17 @@ class SQLiteReminderRepository:
                 self._connection.execute("BEGIN IMMEDIATE")
                 row = self._select_by_id(identifier)
                 if row is None:
-                    raise ReminderValidationError(
-                        f"No reminder exists with id {identifier}"
-                    )
+                    raise ReminderValidationError(f"No reminder exists with id {identifier}")
                 current = _reminder_from_row(row)
                 if current.status is not ReminderStatus.SCHEDULED:
-                    raise ReminderConflictError(
-                        "Only a scheduled reminder can be edited"
-                    )
+                    raise ReminderConflictError("Only a scheduled reminder can be edited")
                 delivery = self._connection.execute(
                     "SELECT delivery_started_at FROM reminders WHERE id = ?",
                     (identifier,),
                 ).fetchone()
                 if delivery is not None and delivery["delivery_started_at"] is not None:
-                    raise ReminderConflictError(
-                        "The reminder notification has already started"
-                    )
-                if (
-                    current.message != expected_stored_message
-                    or current.due_at != expected_due
-                ):
+                    raise ReminderConflictError("The reminder notification has already started")
+                if current.message != expected_stored_message or current.due_at != expected_due:
                     raise ReminderConflictError(
                         "The reminder changed after it was selected; review it again"
                     )

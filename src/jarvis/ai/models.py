@@ -101,7 +101,8 @@ class Conversation:
             message
             for message in self._messages
             if not (
-                message.role == "tool" and message.tool_call_id in identifiers
+                message.role == "tool"
+                and message.tool_call_id in identifiers
                 or message.role == "assistant"
                 and any(call.id in identifiers for call in message.tool_calls)
             )

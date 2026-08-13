@@ -339,8 +339,7 @@ class GuiController:
             result = ActionResult.failed(
                 name,
                 (
-                    "Cancellation was requested after the action started; its outcome "
-                    "is unknown."
+                    "Cancellation was requested after the action started; its outcome is unknown."
                     if outcome_unknown
                     else "The GUI action was cancelled before execution."
                 ),
@@ -626,9 +625,7 @@ def _application_status(application: object) -> StatusView:
     ).casefold() in {"google", "speech-recognition"}:
         external_services = True
     integrations = getattr(config, "integrations", None)
-    external_services = external_services or bool(
-        getattr(integrations, "github_enabled", False)
-    )
+    external_services = external_services or bool(getattr(integrations, "github_enabled", False))
     if not enabled and external_services:
         execution_label = "external data services active"
 

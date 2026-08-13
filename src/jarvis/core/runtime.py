@@ -376,9 +376,7 @@ class JarvisRuntime:
             else:
                 generated = final_response.content.strip()
                 message = (
-                    generated
-                    if len(generated) <= 16_000
-                    else f"{generated[:15_999]}…"
+                    generated if len(generated) <= 16_000 else f"{generated[:15_999]}…"
                 ) or fallback_message
         except LLMProviderError:
             logger.exception("ai_tool_followup_failed")
@@ -466,8 +464,7 @@ def _bounded_tool_value(value: Any, *, _depth: int = 0) -> Any:
         return bounded
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         result = [
-            _bounded_tool_value(item, _depth=_depth + 1)
-            for item in value[:_MAX_TOOL_VALUE_ITEMS]
+            _bounded_tool_value(item, _depth=_depth + 1) for item in value[:_MAX_TOOL_VALUE_ITEMS]
         ]
         if len(value) > _MAX_TOOL_VALUE_ITEMS:
             result.append("[truncated]")

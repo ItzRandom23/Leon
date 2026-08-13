@@ -567,6 +567,7 @@ def test_controller_and_session_enforce_resource_lifetimes() -> None:
         limits=limits,
         module_loader=lambda: FakeModule(runtime),
     )
+
     async def scenario() -> None:
         session = await controller.create_session()
         new_tab = await session.new_tab()
@@ -1000,9 +1001,7 @@ def test_egress_proxy_rejects_private_and_rebound_dns_before_upstream_connect() 
             connection_factory=reject_connect,
         )
         await private_proxy.start()
-        assert (await request(private_proxy, "http://private.test/")).startswith(
-            b"HTTP/1.1 403 "
-        )
+        assert (await request(private_proxy, "http://private.test/")).startswith(b"HTTP/1.1 403 ")
         assert private_connections == 0
         await private_proxy.close()
 
@@ -1023,12 +1022,8 @@ def test_egress_proxy_rejects_private_and_rebound_dns_before_upstream_connect() 
             connection_factory=connect,
         )
         await rebound_proxy.start()
-        assert (await request(rebound_proxy, "http://rebind.test/one")).startswith(
-            b"HTTP/1.1 204 "
-        )
-        assert (await request(rebound_proxy, "http://rebind.test/two")).startswith(
-            b"HTTP/1.1 403 "
-        )
+        assert (await request(rebound_proxy, "http://rebind.test/one")).startswith(b"HTTP/1.1 204 ")
+        assert (await request(rebound_proxy, "http://rebind.test/two")).startswith(b"HTTP/1.1 403 ")
         assert connected == ["93.184.216.34"]
         await rebound_proxy.close()
 

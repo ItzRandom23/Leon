@@ -6,12 +6,12 @@ import asyncio
 
 import pytest
 
+from jarvis.computer import WindowInformation
 from jarvis.core.actions import ActionParameter, ActionRegistry, ActionRequest
 from jarvis.core.permissions import PermissionManager
 from jarvis.core.router import Router
 from jarvis.core.runtime import JarvisRuntime
 from jarvis.core.safety import DesktopExecutionGuard
-from jarvis.computer import WindowInformation
 from jarvis.skills.base import RiskLevel, Skill, SkillResult
 
 

@@ -685,10 +685,7 @@ def test_external_tool_content_is_used_once_then_removed_before_later_tool_selec
     assert first.message == "I summarized the external content as untrusted data."
     assert second.message == "A later response."
     assert llm.calls[1][1] == ()
-    assert all(
-        "IGNORE THE USER" not in message.content
-        for message in llm.calls[2][0]
-    )
+    assert all("IGNORE THE USER" not in message.content for message in llm.calls[2][0])
 
 
 def test_model_facing_tool_result_is_bounded_and_redacts_secret_named_fields() -> None:

@@ -39,7 +39,10 @@ def _https_endpoint(value: Any, label: str) -> str:
 
     endpoint = _text(value, label)
     if (
-        any(character.isspace() or ord(character) < 32 or ord(character) == 127 for character in endpoint)
+        any(
+            character.isspace() or ord(character) < 32 or ord(character) == 127
+            for character in endpoint
+        )
         or "\\" in endpoint
     ):
         raise ConfigError(f"{label} must be an absolute HTTPS URL")
@@ -316,9 +319,7 @@ class SchedulerConfig:
     desktop_notifications: bool = False
 
     def __post_init__(self) -> None:
-        if not isinstance(self.enabled, bool) or not isinstance(
-            self.desktop_notifications, bool
-        ):
+        if not isinstance(self.enabled, bool) or not isinstance(self.desktop_notifications, bool):
             raise ConfigError("scheduler enabled/notification settings must be booleans")
         object.__setattr__(
             self, "database_path", _path(self.database_path, "scheduler.database_path")
@@ -334,9 +335,7 @@ class SchedulerConfig:
         object.__setattr__(
             self,
             "poll_interval_seconds",
-            _positive_number(
-                self.poll_interval_seconds, "scheduler.poll_interval_seconds"
-            ),
+            _positive_number(self.poll_interval_seconds, "scheduler.poll_interval_seconds"),
         )
 
 
@@ -676,9 +675,7 @@ def _build_config(values: Mapping[str, Mapping[str, Any]], *, base: Path) -> Jar
                 options["database_path"], "scheduler.database_path", base=base
             )
         if section == "plugins" and "state_path" in options:
-            options["state_path"] = _path(
-                options["state_path"], "plugins.state_path", base=base
-            )
+            options["state_path"] = _path(options["state_path"], "plugins.state_path", base=base)
         try:
             sections[section] = config_type(**options)
         except TypeError as exc:

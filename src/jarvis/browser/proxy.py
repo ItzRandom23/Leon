@@ -201,7 +201,12 @@ class AuthenticatedLoopbackProxy:
         try:
             try:
                 request = await self._read_request(reader)
-            except (ValueError, asyncio.IncompleteReadError, asyncio.LimitOverrunError, TimeoutError):
+            except (
+                ValueError,
+                asyncio.IncompleteReadError,
+                asyncio.LimitOverrunError,
+                TimeoutError,
+            ):
                 await self._send_status(writer, 400, "Bad Request")
                 return
             authorization = request.values("proxy-authorization")
@@ -265,9 +270,7 @@ class AuthenticatedLoopbackProxy:
             value_bytes = value_bytes.strip(b" \t")
             if any((byte < 32 and byte != 9) or byte == 127 for byte in value_bytes):
                 raise ValueError
-            headers.append(
-                (name_bytes.decode("ascii"), value_bytes.decode("latin-1"))
-            )
+            headers.append((name_bytes.decode("ascii"), value_bytes.decode("latin-1")))
         return _ProxyRequest(method, target, version, tuple(headers))
 
     async def _handle_connect(
@@ -328,10 +331,14 @@ class AuthenticatedLoopbackProxy:
             await _close_writer(upstream_writer)
 
     def _connect_target(self, target: str) -> tuple[int, str]:
-        if not target.isascii() or any(
-            character.isspace() or ord(character) < 32 or ord(character) == 127
-            for character in target
-        ) or any(character in target for character in "/?#@"):
+        if (
+            not target.isascii()
+            or any(
+                character.isspace() or ord(character) < 32 or ord(character) == 127
+                for character in target
+            )
+            or any(character in target for character in "/?#@")
+        ):
             raise BrowserValidationError("CONNECT target is invalid")
         try:
             parsed = urlsplit(f"//{target}")
@@ -423,9 +430,7 @@ class AuthenticatedLoopbackProxy:
             f"Host: {self._authority(parsed)}",
         ]
         lines.extend(
-            f"{name}: {value}"
-            for name, value in request.headers
-            if name.casefold() not in blocked
+            f"{name}: {value}" for name, value in request.headers if name.casefold() not in blocked
         )
         lines.extend(("Connection: close", "", ""))
         return "\r\n".join(lines).encode("latin-1")
@@ -449,12 +454,8 @@ class AuthenticatedLoopbackProxy:
         upstream_reader: asyncio.StreamReader,
         upstream_writer: asyncio.StreamWriter,
     ) -> None:
-        downstream_to_upstream = asyncio.create_task(
-            self._pump(downstream_reader, upstream_writer)
-        )
-        upstream_to_downstream = asyncio.create_task(
-            self._pump(upstream_reader, downstream_writer)
-        )
+        downstream_to_upstream = asyncio.create_task(self._pump(downstream_reader, upstream_writer))
+        upstream_to_downstream = asyncio.create_task(self._pump(upstream_reader, downstream_writer))
         tasks = {downstream_to_upstream, upstream_to_downstream}
         try:
             done, pending = await asyncio.wait(

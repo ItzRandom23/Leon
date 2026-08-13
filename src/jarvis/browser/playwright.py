@@ -658,9 +658,7 @@ class PlaywrightBrowserSession(BrowserSession):
                     await _finish_async_cleanup(self._egress_proxy.close())
                 except (Exception, asyncio.CancelledError):
                     if close_error is None:
-                        close_error = BrowserSessionError(
-                            "The browser session could not be closed"
-                        )
+                        close_error = BrowserSessionError("The browser session could not be closed")
             if page_tasks:
                 await asyncio.gather(*page_tasks, return_exceptions=True)
             if close_error is not None:
