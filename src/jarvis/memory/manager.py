@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import builtins
+
 from jarvis.memory.models import MemoryRecord
 from jarvis.memory.repository import MemoryCategoryLike, MemoryRepository
 

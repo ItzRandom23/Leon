@@ -66,7 +66,7 @@ class CtypesWindowsApi:
 
     def __init__(self) -> None:
         try:
-            self._user32 = getattr(ctypes, "windll").user32
+            self._user32 = ctypes.windll.user32
         except AttributeError as exc:
             raise UnsupportedPlatformError("native window control requires Windows") from exc
 

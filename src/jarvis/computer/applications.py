@@ -80,7 +80,7 @@ def _is_windows_elevated() -> bool:
     if platform.system() != "Windows":
         return False
     try:
-        return bool(getattr(ctypes, "windll").shell32.IsUserAnAdmin())
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
     except (AttributeError, OSError):
         # Discovery from user-writable install locations is unsafe if privilege
         # state cannot be established on Windows.
@@ -167,7 +167,7 @@ def _get_windows_system_directory() -> Path:
     if platform.system() != "Windows":
         raise UnsupportedPlatformError("Windows application paths require Windows")
     buffer = ctypes.create_unicode_buffer(32_768)
-    length = getattr(ctypes, "windll").kernel32.GetSystemDirectoryW(buffer, len(buffer))
+    length = ctypes.windll.kernel32.GetSystemDirectoryW(buffer, len(buffer))
     if not length or length >= len(buffer):
         raise OSError("Windows did not return its system directory")
     path = Path(buffer.value)
