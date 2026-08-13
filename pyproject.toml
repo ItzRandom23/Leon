@@ -25,6 +25,7 @@ classifiers = [
 ]
 dependencies = [
     "psutil>=5.9,<8",
+    "tzdata>=2024.1",
 ]
 
 [project.optional-dependencies]
