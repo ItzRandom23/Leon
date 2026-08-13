@@ -1,5 +1,6 @@
 """Calendar provider contracts and a network-free in-memory implementation."""
 
+from jarvis.integrations.calendar.caldav_provider import CalDAVCalendarProvider
 from jarvis.integrations.calendar.models import (
     CalendarEvent,
     CalendarEventRequest,
@@ -16,6 +17,7 @@ from jarvis.integrations.calendar.provider import (
 __all__ = [
     "CALENDAR_METADATA",
     "CALENDAR_OPERATIONS",
+    "CalDAVCalendarProvider",
     "CalendarEvent",
     "CalendarEventRequest",
     "CalendarEventUpdate",

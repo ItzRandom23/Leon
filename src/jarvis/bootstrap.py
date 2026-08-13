@@ -36,8 +36,8 @@ from jarvis.integrations import (
     StaticCredentialResolver,
     register_integration_actions,
 )
-from jarvis.integrations.calendar import InMemoryCalendarProvider
-from jarvis.integrations.email import InMemoryEmailProvider
+from jarvis.integrations.calendar import CalDAVCalendarProvider, InMemoryCalendarProvider
+from jarvis.integrations.email import InMemoryEmailProvider, SMTPEmailProvider
 from jarvis.integrations.github import GitHubClient, GitHubIntegration
 from jarvis.memory import MemoryManager, SQLiteMemoryRepository
 from jarvis.plugins import (
@@ -359,15 +359,55 @@ def _build_integrations(config: JarvisConfig) -> IntegrationRegistry:
         )
     if config.integrations.email_provider in {"memory", "in-memory"}:
         registry.register(InMemoryEmailProvider())
+    elif config.integrations.email_provider == "smtp":
+        registry.register(_build_smtp_email_provider(config))
     elif config.integrations.email_provider != "none":
         raise ConfigError(f"Unsupported email provider: {config.integrations.email_provider!r}")
     if config.integrations.calendar_provider in {"memory", "in-memory"}:
         registry.register(InMemoryCalendarProvider())
+    elif config.integrations.calendar_provider == "caldav":
+        registry.register(_build_caldav_calendar_provider(config))
     elif config.integrations.calendar_provider != "none":
         raise ConfigError(
             f"Unsupported calendar provider: {config.integrations.calendar_provider!r}"
         )
     return registry
+
+
+def _build_smtp_email_provider(config: JarvisConfig) -> SMTPEmailProvider:
+    settings = config.integrations
+    if settings.email_password is None:
+        raise ConfigError("The SMTP email provider requires JARVIS_EMAIL_PASSWORD")
+    if not settings.email_smtp_host and not settings.email_imap_host:
+        raise ConfigError("The SMTP email provider requires email_smtp_host or email_imap_host")
+    if not settings.email_username:
+        raise ConfigError("The SMTP email provider requires email_username")
+    return SMTPEmailProvider(
+        StaticCredentialResolver({"email.password": settings.email_password}),
+        smtp_host=settings.email_smtp_host,
+        smtp_port=settings.email_smtp_port,
+        smtp_mode=settings.email_smtp_mode,
+        imap_host=settings.email_imap_host,
+        imap_port=settings.email_imap_port,
+        imap_ssl=settings.email_imap_ssl,
+        username=settings.email_username,
+        from_address=settings.email_from,
+    )
+
+
+def _build_caldav_calendar_provider(config: JarvisConfig) -> CalDAVCalendarProvider:
+    settings = config.integrations
+    if settings.calendar_password is None:
+        raise ConfigError("The CalDAV provider requires JARVIS_CALENDAR_PASSWORD")
+    if not settings.calendar_url:
+        raise ConfigError("The CalDAV provider requires calendar_url")
+    if not settings.calendar_username:
+        raise ConfigError("The CalDAV provider requires calendar_username")
+    return CalDAVCalendarProvider(
+        StaticCredentialResolver({"calendar.password": settings.calendar_password}),
+        url=settings.calendar_url,
+        username=settings.calendar_username,
+    )
 
 
 def _create_llm_provider(config: JarvisConfig) -> LLMProvider | None:

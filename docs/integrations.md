@@ -6,10 +6,11 @@ connects through explicit credentials, exposes typed methods, and is wrapped by
 registered JARVIS actions. The application starts and closes integrations with
 the same lifecycle used by the terminal and GUI.
 
-Status: GitHub is the only bundled live-account adapter and remains
-experimental. Email and calendar include full contracts plus deterministic
-in-memory providers for tests/demos; no Gmail, Outlook, Exchange, or CalDAV
-account adapter is bundled.
+Status: GitHub is an experimental bundled live-account adapter. Email includes
+full contracts, a deterministic in-memory provider for tests/demos, and an
+opt-in SMTP/IMAP live adapter; calendar includes full contracts, a deterministic
+in-memory provider, and an opt-in CalDAV live adapter. No Gmail, Outlook, or
+Exchange account adapter is bundled.
 
 ## Shared lifecycle and operation model
 
@@ -105,8 +106,36 @@ The bundled `memory`/`in-memory` implementation:
 - treats repeated sends of the same draft idempotently within that process.
 
 Selecting `memory` is therefore useful for development and interface demos, not
-for emailing another person. A future live adapter must implement the same
-contract without collapsing draft review and sending.
+for emailing another person. For a live account, select the SMTP/IMAP adapter:
+
+```toml
+[integrations]
+email_provider = "smtp"
+email_smtp_host = "smtp.example.com"
+email_smtp_port = 587
+email_smtp_mode = "starttls"   # starttls | ssl | none
+email_imap_host = "imap.example.com"
+email_imap_port = 993
+email_imap_ssl = true
+email_username = "leon@example.com"
+email_from = "leon@example.com"
+```
+
+The password is read from `JARVIS_EMAIL_PASSWORD` (never the config file). The
+SMTP adapter uses only the Python standard library:
+
+- **Sending** goes through SMTP (plain `SMTP`, `SMTP_SSL`, or `SMTP` +
+  `starttls`) and always targets an existing immutable draft, preserving the
+  same review-and-confirm flow as the demo provider.
+- **Reading** goes through IMAP using UID-based `SEARCH` and `FETCH`; summaries,
+  full-message reads, and unread flags come from live server state.
+- Drafts remain process-local: the immutable draft that binds an approval is the
+  same object the SMTP send reads immediately before sending.
+
+Configure at least one host. With only `email_imap_host`, reading works but
+sending is refused; with only `email_smtp_host`, sending works but reading is
+unavailable. Failures are sanitized and never include server responses or
+credential values.
 
 ## Calendar contract and in-memory provider
 
@@ -132,6 +161,29 @@ search, create, update, and delete.
 
 The in-memory provider performs no sync and loses events at process exit. It is
 not a local persistent calendar.
+
+For a live calendar, select the CalDAV adapter:
+
+```toml
+[integrations]
+calendar_provider = "caldav"
+calendar_url = "https://caldav.example.com/dav/"
+calendar_username = "leon@example.com"
+```
+
+The password is read from `JARVIS_CALENDAR_PASSWORD`. The CalDAV adapter is
+implemented on the [`caldav`](https://pypi.org/project/caldav/) library, which
+is an optional dependency:
+
+```bash
+pip install "jarvis-assistant[integrations]"
+```
+
+At connect time it verifies credentials and resolves the first calendar
+collection on the account. Event ids are the remote ICS `UID`s, so
+create/update/delete bind to a stable target that the permission system
+re-reads before mutation. ICS generation is deterministic and timezone-aware;
+events are written with their configured `TZID` and read back in UTC.
 
 ## Transport and credential boundaries
 

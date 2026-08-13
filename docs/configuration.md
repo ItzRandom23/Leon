@@ -133,12 +133,27 @@ scheduler never executes `ScheduledAction` metadata. See
 | `integrations.github_enabled` | `false` | Compose and connect the bundled GitHub REST adapter |
 | `integrations.github_token` | unset | Required when GitHub is enabled; prefer `JARVIS_GITHUB_TOKEN` |
 | `integrations.github_base_url` | `https://api.github.com` | Absolute HTTPS base URL without credentials, query, or fragment |
-| `integrations.email_provider` | `"none"` | `none`, `memory`, or `in-memory` |
-| `integrations.calendar_provider` | `"none"` | `none`, `memory`, or `in-memory` |
+| `integrations.email_provider` | `"none"` | `none`, `memory`/`in-memory`, or `smtp` |
+| `integrations.email_smtp_host` | `""` | SMTP host for outbound sending; `none` disables SMTP |
+| `integrations.email_smtp_port` | `587` | SMTP port (`465` with `ssl` mode) |
+| `integrations.email_smtp_mode` | `"starttls"` | `starttls`, `ssl`, or `none` |
+| `integrations.email_imap_host` | `""` | IMAP host for reading/searching; `none` disables IMAP |
+| `integrations.email_imap_port` | `993` | IMAP port (`143` without SSL) |
+| `integrations.email_imap_ssl` | `true` | Whether IMAP connects over TLS |
+| `integrations.email_username` | `""` | Account address used for SMTP/IMAP login |
+| `integrations.email_from` | `""` | Envelope `From` address; defaults to `email_username` |
+| `integrations.email_password` | unset | Required for the `smtp` provider; prefer `JARVIS_EMAIL_PASSWORD` |
+| `integrations.calendar_provider` | `"none"` | `none`, `memory`/`in-memory`, or `caldav` |
+| `integrations.calendar_url` | `""` | Absolute HTTPS CalDAV server or calendar collection URL |
+| `integrations.calendar_username` | `""` | CalDAV account username |
+| `integrations.calendar_password` | unset | Required for the `caldav` provider; prefer `JARVIS_CALENDAR_PASSWORD` |
 
 The `memory` email/calendar providers are ephemeral test/demo implementations;
-they do not connect to a real account and lose their records on exit. GitHub is
-the only bundled live service. See [integrations](integrations.md).
+they do not connect to a real account and lose their records on exit. The
+`smtp` email and `caldav` calendar providers connect to real accounts and are
+opt-in; SMTP uses only the standard library, while CalDAV requires the
+optional `integrations` extra (`pip install "jarvis-assistant[integrations]"`).
+See [integrations](integrations.md).
 
 ### Plugins
 

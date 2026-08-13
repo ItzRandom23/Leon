@@ -15,6 +15,7 @@ from jarvis.integrations.email.provider import (
     EmailProvider,
     InMemoryEmailProvider,
 )
+from jarvis.integrations.email.smtp_provider import SMTPEmailProvider
 
 __all__ = [
     "EMAIL_METADATA",
@@ -27,5 +28,6 @@ __all__ = [
     "EmailSearch",
     "EmailSummary",
     "InMemoryEmailProvider",
+    "SMTPEmailProvider",
     "SentEmail",
 ]

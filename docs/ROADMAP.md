@@ -135,11 +135,14 @@ inert and cannot start an autonomous action.
 - Email list/search/read/draft/send contract with live draft verification
 - Calendar list/search/create/update/delete contract with live target checks
 - Deterministic in-memory email and calendar providers for tests and demos
+- Opt-in live email (standard-library SMTP sending and IMAP reading) and CalDAV
+  calendar adapters behind resolved credentials
 
-GitHub is the only bundled live-account adapter. No Gmail, Outlook, Exchange,
-CalDAV, Slack, or collaboration-service adapter is included yet. External
-content remains untrusted and each mutation stays behind the core action and
-permission boundaries.
+GitHub, SMTP/IMAP email, and CalDAV calendar are bundled live-account adapters
+and remain experimental. No Gmail, Outlook, Exchange, Slack, or
+collaboration-service adapter is included yet. External content remains
+untrusted and each mutation stays behind the core action and permission
+boundaries.
 
 ## Phase 10 — Plugin and skill SDK ✅ Implemented foundation / 🚧 Trusted-code mode
 

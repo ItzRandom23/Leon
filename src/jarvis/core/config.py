@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import tomllib
 from collections.abc import Mapping
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 from pathlib import Path
@@ -73,6 +74,17 @@ def _positive_integer(value: Any, label: str, *, maximum: int | None = None) -> 
     if maximum is not None and value > maximum:
         raise ConfigError(f"{label} must be at most {maximum}")
     return value
+
+
+def _port(value: Any, label: str) -> int:
+    return _positive_integer(value, label, maximum=65535)
+
+
+def _choice(value: Any, label: str, allowed: AbstractSet[str]) -> str:
+    normalized = _text(value, label).casefold()
+    if normalized not in allowed:
+        raise ConfigError(f"{label} must be one of: {', '.join(sorted(allowed))}")
+    return normalized
 
 
 def _path(value: str | os.PathLike[str], label: str, *, base: Path | None = None) -> Path:
@@ -347,7 +359,19 @@ class IntegrationsConfig:
     github_token: str | None = field(default=None, repr=False, metadata={"secret": True})
     github_base_url: str = "https://api.github.com"
     email_provider: str = "none"
+    email_smtp_host: str = ""
+    email_smtp_port: int = 587
+    email_smtp_mode: str = "starttls"
+    email_imap_host: str = ""
+    email_imap_port: int = 993
+    email_imap_ssl: bool = True
+    email_username: str = ""
+    email_from: str = ""
+    email_password: str | None = field(default=None, repr=False, metadata={"secret": True})
     calendar_provider: str = "none"
+    calendar_url: str = ""
+    calendar_username: str = ""
+    calendar_password: str | None = field(default=None, repr=False, metadata={"secret": True})
 
     def __post_init__(self) -> None:
         if not isinstance(self.github_enabled, bool):
@@ -367,8 +391,70 @@ class IntegrationsConfig:
         )
         object.__setattr__(
             self,
+            "email_smtp_host",
+            _text(self.email_smtp_host, "integrations.email_smtp_host", allow_empty=True),
+        )
+        object.__setattr__(
+            self,
+            "email_smtp_port",
+            _port(self.email_smtp_port, "integrations.email_smtp_port"),
+        )
+        object.__setattr__(
+            self,
+            "email_smtp_mode",
+            _choice(
+                self.email_smtp_mode,
+                "integrations.email_smtp_mode",
+                {"starttls", "ssl", "none"},
+            ),
+        )
+        object.__setattr__(
+            self,
+            "email_imap_host",
+            _text(self.email_imap_host, "integrations.email_imap_host", allow_empty=True),
+        )
+        object.__setattr__(
+            self,
+            "email_imap_port",
+            _port(self.email_imap_port, "integrations.email_imap_port"),
+        )
+        if not isinstance(self.email_imap_ssl, bool):
+            raise ConfigError("integrations.email_imap_ssl must be a boolean")
+        object.__setattr__(
+            self,
+            "email_username",
+            _text(self.email_username, "integrations.email_username", allow_empty=True),
+        )
+        object.__setattr__(
+            self,
+            "email_from",
+            _text(self.email_from, "integrations.email_from", allow_empty=True),
+        )
+        object.__setattr__(
+            self,
+            "email_password",
+            _optional_text(self.email_password, "integrations.email_password"),
+        )
+        object.__setattr__(
+            self,
             "calendar_provider",
             _text(self.calendar_provider, "integrations.calendar_provider").casefold(),
+        )
+        calendar_url = _text(self.calendar_url, "integrations.calendar_url", allow_empty=True)
+        object.__setattr__(
+            self,
+            "calendar_url",
+            "" if not calendar_url else _https_endpoint(calendar_url, "integrations.calendar_url"),
+        )
+        object.__setattr__(
+            self,
+            "calendar_username",
+            _text(self.calendar_username, "integrations.calendar_username", allow_empty=True),
+        )
+        object.__setattr__(
+            self,
+            "calendar_password",
+            _optional_text(self.calendar_password, "integrations.calendar_password"),
         )
 
 
@@ -614,7 +700,19 @@ def _environment_overrides(environment: Mapping[str, str]) -> dict[str, dict[str
         "JARVIS_GITHUB_TOKEN": ("integrations", "github_token", "optional"),
         "JARVIS_GITHUB_BASE_URL": ("integrations", "github_base_url", "text"),
         "JARVIS_EMAIL_PROVIDER": ("integrations", "email_provider", "text"),
+        "JARVIS_EMAIL_SMTP_HOST": ("integrations", "email_smtp_host", "text"),
+        "JARVIS_EMAIL_SMTP_PORT": ("integrations", "email_smtp_port", "int"),
+        "JARVIS_EMAIL_SMTP_MODE": ("integrations", "email_smtp_mode", "text"),
+        "JARVIS_EMAIL_IMAP_HOST": ("integrations", "email_imap_host", "text"),
+        "JARVIS_EMAIL_IMAP_PORT": ("integrations", "email_imap_port", "int"),
+        "JARVIS_EMAIL_IMAP_SSL": ("integrations", "email_imap_ssl", "bool"),
+        "JARVIS_EMAIL_USERNAME": ("integrations", "email_username", "text"),
+        "JARVIS_EMAIL_FROM": ("integrations", "email_from", "text"),
+        "JARVIS_EMAIL_PASSWORD": ("integrations", "email_password", "optional"),
         "JARVIS_CALENDAR_PROVIDER": ("integrations", "calendar_provider", "text"),
+        "JARVIS_CALENDAR_URL": ("integrations", "calendar_url", "text"),
+        "JARVIS_CALENDAR_USERNAME": ("integrations", "calendar_username", "text"),
+        "JARVIS_CALENDAR_PASSWORD": ("integrations", "calendar_password", "optional"),
         "JARVIS_PLUGINS_ENABLED": ("plugins", "enabled", "bool"),
         "JARVIS_PLUGINS_AUTO_LOAD": ("plugins", "auto_load", "bool"),
         "JARVIS_PLUGINS_STATE_PATH": ("plugins", "state_path", "text"),

@@ -49,6 +49,9 @@ browser = [
 notifications = [
     "plyer>=2.1,<3",
 ]
+integrations = [
+    "caldav>=1.3,<2",
+]
 gui = [
     "PySide6>=6.7,<7",
     "qasync>=0.27,<1",

@@ -22,8 +22,8 @@ validated action and passes through the same local permission engine.
 | 5 — Computer control | Allowlisted apps, system inspection, screenshots, input, and Windows-window adapters | Experimental; Windows-first |
 | 6 — Vision | Semantic OpenAI Responses and OpenAI-compatible image adapters | Experimental; no coordinate grounding |
 | 7 — Browser | Bounded Playwright sessions, public-web navigation, snapshots, and verified element actions | Experimental; opt-in |
-| 8 — Tasks | Persistent timezone-aware one-time and recurring reminders with notification scheduling | Implemented foundation; notification delivery needs a running process |
-| 9 — Integrations | Lifecycle/credential contracts, GitHub REST adapter, email/calendar provider contracts | GitHub experimental; email/calendar built-ins are in-memory demos only |
+| 8 — Tasks | Persistent timezone-aware one-time and recurring reminders with notification scheduling | Implemented; notifications delivered by a running `jarvis`/`jarvis gui` process |
+| 9 — Integrations | Lifecycle/credential contracts, GitHub REST adapter, SMTP/IMAP email and CalDAV calendar adapters | GitHub experimental; email/calendar live-account adapters opt-in, in-memory demo providers bundled |
 | 10 — Plugins | Versioned entry-point API, discovery, staged registration, enable/disable state | Implemented foundation; third-party code is trusted and unsandboxed |
 | 11 — GUI | Shared-runtime controller and optional PySide6/qasync desktop interface | Experimental; optional desktop runtime |
 
@@ -251,7 +251,8 @@ Important boundaries:
 - Reminder scheduling notifies only. Persisted `ScheduledAction` metadata is
   inert and cannot execute an action in this release.
 - GitHub issue creation, email sending, and calendar mutations use explicit
-  action boundaries. Email/calendar live-account adapters are not bundled.
+  action boundaries. Live-account email (SMTP/IMAP) and CalDAV calendar adapters
+  are opt-in; the bundled in-memory providers perform no network calls.
 - Plugins are ordinary installed Python and are **not sandboxed**. Metadata
   declarations are review information, not an operating-system security
   boundary.

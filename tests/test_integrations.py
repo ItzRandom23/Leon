@@ -7,6 +7,7 @@ import io
 import json
 import urllib.error
 import urllib.request
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -17,6 +18,7 @@ from jarvis.integrations import (
     DuplicateIntegrationError,
     EnvironmentCredentialResolver,
     HTTPSJSONTransport,
+    IntegrationAuthError,
     IntegrationLifecycleError,
     IntegrationMetadata,
     IntegrationNotConnectedError,
@@ -34,6 +36,7 @@ from jarvis.integrations import (
 )
 from jarvis.integrations.calendar import (
     CALENDAR_OPERATIONS,
+    CalDAVCalendarProvider,
     CalendarEvent,
     CalendarEventRequest,
     CalendarEventUpdate,
@@ -47,6 +50,7 @@ from jarvis.integrations.email import (
     EmailMessage,
     EmailSearch,
     InMemoryEmailProvider,
+    SMTPEmailProvider,
 )
 from jarvis.integrations.github import (
     GITHUB_API_VERSION,
@@ -624,3 +628,405 @@ def test_calendar_models_validate_timezone_ranges_and_updates() -> None:
         request.attendees,
     )
     assert event.id == "id"
+
+
+def _smtp_criteria_match(message: _FakeEmailMessage, criteria: Sequence[str]) -> bool:
+    for part in criteria:
+        if part.startswith('TEXT "'):
+            text = part[6:-1].casefold()
+            haystack = f"{message.subject}\n{message.body}".casefold()
+            if text not in haystack:
+                return False
+        elif part.startswith('FROM "'):
+            if part[6:-1].casefold() not in message.sender.casefold():
+                return False
+        elif part == "SEEN" and not message.seen:
+            return False
+        elif part == "UNSEEN" and message.seen:
+            return False
+    return True
+
+
+class _FakeEmailMessage:
+    """Tiny MIME builder so provider tests never touch the network."""
+
+    def __init__(
+        self,
+        *,
+        uid: str,
+        subject: str,
+        sender: str,
+        to: str,
+        body: str,
+        date: datetime,
+        seen: bool = False,
+    ) -> None:
+        from email.message import EmailMessage as MIMEMessage
+
+        message = MIMEMessage()
+        message["From"] = sender
+        message["To"] = to
+        message["Subject"] = subject
+        message["Date"] = date.strftime("%a, %d %b %Y %H:%M:%S %z")
+        message.set_content(body)
+        self.uid = uid
+        self.subject = subject
+        self.sender = sender
+        self.body = body
+        self.payload = message.as_bytes()
+        self.seen = seen
+
+
+class _FakeIMAP:
+    def __init__(self, messages: list[_FakeEmailMessage]) -> None:
+        self.messages = messages
+        self.logins: list[tuple[str, str]] = []
+        self.selected: list[str] = []
+        self.search_criteria: list[tuple[str, ...]] = []
+
+    def login(self, username: str, password: str) -> None:
+        self.logins.append((username, password))
+        if password == "wrong":
+            raise IntegrationAuthError("Email credentials were rejected")
+
+    def select(self, mailbox: str = "INBOX") -> int:
+        self.selected.append(mailbox)
+        return len(self.messages)
+
+    def search(self, criteria: Sequence[str]) -> list[str]:
+        self.search_criteria.append(tuple(criteria))
+        matched = [message for message in self.messages if _smtp_criteria_match(message, criteria)]
+        return [message.uid for message in matched][::-1]
+
+    def fetch(self, uids: Sequence[str], spec: str) -> list[tuple[str, bytes, bool]]:
+        by_uid = {message.uid: message for message in self.messages}
+        result: list[tuple[str, bytes, bool]] = []
+        for uid in uids:
+            message = by_uid.get(uid)
+            if message is not None:
+                result.append((uid, message.payload, message.seen))
+        return result
+
+    def logout(self) -> None:
+        pass
+
+
+class _FakeSMTP:
+    def __init__(self) -> None:
+        self.sessions = 0
+        self.logins: list[tuple[str, str]] = []
+        self.sent: list[tuple[str, list[str], bytes]] = []
+        self.secure_called = 0
+
+    def secure(self) -> None:
+        self.secure_called += 1
+
+    def login(self, username: str, password: str) -> None:
+        self.logins.append((username, password))
+
+    def send(self, sender: str, recipients: list[str], payload: bytes) -> None:
+        self.sent.append((sender, recipients, payload))
+
+    def quit(self) -> None:
+        self.sessions += 1
+
+
+class _FakeVObjectLine:
+    def __init__(self, value: object, params: dict[str, object] | None = None) -> None:
+        self.value = value
+        self.params = params or {}
+
+
+class _FakeVEVENT:
+    def __init__(
+        self,
+        *,
+        uid: str,
+        summary: str,
+        description: str = "",
+        location: str = "",
+        start: datetime,
+        end: datetime,
+        tzid: str,
+        attendees: tuple[str, ...] = (),
+        modified: datetime | None = None,
+    ) -> None:
+        self.uid = _FakeVObjectLine(uid)
+        self.summary = _FakeVObjectLine(summary)
+        self.description = _FakeVObjectLine(description)
+        self.location = _FakeVObjectLine(location)
+        params = {"TZID": [tzid]} if tzid else {}
+        self.dtstart = _FakeVObjectLine(start, params)
+        self.dtend = _FakeVObjectLine(end, params)
+        if modified is not None:
+            self.lastmodified = _FakeVObjectLine(modified)
+        self.contents = {"attendee": [_FakeVObjectLine(f"mailto:{person}") for person in attendees]}
+
+
+class _FakeVObject:
+    def __init__(self, vevent: _FakeVEVENT) -> None:
+        self.vevent = vevent
+
+
+class _FakeEvent:
+    def __init__(self, vevent: _FakeVEVENT, delete: bool = False) -> None:
+        self.vobject_instance = _FakeVObject(vevent)
+        self.data = ""
+        self.save_calls = 0
+        self.delete_calls = 0
+        self._delete = delete
+
+    def load(self) -> None:
+        return None
+
+    def save(self) -> None:
+        self.save_calls += 1
+
+    def delete(self) -> None:
+        self.delete_calls += 1
+        self._delete = True
+
+
+class _FakeCalendar:
+    def __init__(self, events: list[_FakeEvent] | None = None) -> None:
+        self._events: dict[str, _FakeEvent] = {}
+        self.created_ics: list[str] = []
+        for event in events or []:
+            self._events[event.vobject_instance.vevent.uid.value] = event
+
+    def events(self) -> list[_FakeEvent]:
+        return list(self._events.values())
+
+    def event_by_uid(self, uid: str) -> _FakeEvent:
+        if uid not in self._events:
+            raise ValueError("event not found")
+        return self._events[uid]
+
+    def save_event(self, ics: str) -> _FakeEvent:
+        uid = next((line[4:] for line in ics.splitlines() if line.startswith("UID:")), "created")
+        event = _FakeEvent(
+            _FakeVEVENT(
+                uid=uid,
+                summary="",
+                start=datetime(2026, 1, 1, tzinfo=UTC),
+                end=datetime(2026, 1, 1, 1, tzinfo=UTC),
+                tzid="UTC",
+            )
+        )
+        self._events[uid] = event
+        self.created_ics.append(ics)
+        return event
+
+
+class _FakePrincipal:
+    def __init__(self, calendar: _FakeCalendar) -> None:
+        self._calendar = calendar
+
+    def calendars(self) -> list[_FakeCalendar]:
+        return [self._calendar]
+
+
+class _FakeCalDAVClient:
+    def __init__(self, calendar: _FakeCalendar) -> None:
+        self._principal = _FakePrincipal(calendar)
+
+    def principal(self) -> _FakePrincipal:
+        return self._principal
+
+
+def _smtp_provider(
+    imap_messages: list[_FakeEmailMessage],
+    *,
+    password: str = "secret",
+) -> tuple[SMTPEmailProvider, _FakeIMAP, _FakeSMTP]:
+    imap = _FakeIMAP(imap_messages)
+    smtp = _FakeSMTP()
+    provider = SMTPEmailProvider(
+        StaticCredentialResolver({"email.password": password}),
+        smtp_host="smtp.example.com",
+        smtp_mode="starttls",
+        imap_host="imap.example.com",
+        username="leon@example.com",
+        from_address="leon@example.com",
+        imap_factory=lambda host, port, ssl, timeout: imap,
+        smtp_factory=lambda host, port, ssl, timeout: smtp,
+    )
+    return provider, imap, smtp
+
+
+def test_smtp_email_provider_full_contract() -> None:
+    async def scenario() -> None:
+        older = _FakeEmailMessage(
+            uid="1",
+            subject="Old sync",
+            sender="alice@example.com",
+            to="leon@example.com",
+            body="first body",
+            date=NOW - timedelta(hours=2),
+        )
+        newer = _FakeEmailMessage(
+            uid="2",
+            subject="Hello world",
+            sender="bob@example.com",
+            to="leon@example.com",
+            body="second body",
+            date=NOW,
+            seen=True,
+        )
+        provider, imap, smtp = _smtp_provider([older, newer])
+        with pytest.raises(IntegrationNotConnectedError):
+            await provider.list_messages()
+        await provider.connect()
+        assert provider.status.value == "connected"
+
+        listed = await provider.list_messages(limit=10)
+        assert [item.id for item in listed] == ["2", "1"]
+        assert listed[0].unread is False and listed[1].unread is True
+        assert listed[1].subject == "Old sync"
+        assert listed[0].sender.address == "bob@example.com"
+
+        read = await provider.read_message("1")
+        assert read.body_text.strip() == "first body"
+
+        searched = await provider.search_messages(EmailSearch(text="hello", unread=False))
+        assert [item.id for item in searched] == ["2"]
+        assert imap.search_criteria[-1] == ('TEXT "hello"', "SEEN")
+
+        draft = await provider.create_draft(
+            EmailDraftRequest(
+                (EmailAddress("alice@example.com"),),
+                "Re: sync",
+                "body text",
+                cc=(EmailAddress("cc@example.com"),),
+            )
+        )
+        replayed = await provider.read_draft(draft.id)
+        assert replayed.id == draft.id
+        sent = await provider.send_message(draft.id)
+        resent = await provider.send_message(draft.id)
+        assert sent.draft_id == draft.id and resent is sent
+        assert len(smtp.sent) == 1
+        sender, recipients, payload = smtp.sent[0]
+        assert sender == "leon@example.com"
+        assert recipients == ["alice@example.com", "cc@example.com"]
+        assert b"Subject: Re: sync" in payload
+        assert b"body text" in payload
+        assert smtp.secure_called == 2
+
+    asyncio.run(scenario())
+
+
+def test_smtp_email_provider_rejects_bad_credentials() -> None:
+    async def scenario() -> None:
+        provider, imap, smtp = _smtp_provider([], password="wrong")
+        with pytest.raises(IntegrationAuthError, match="credentials"):
+            await provider.connect()
+        assert provider.status.value == "failed"
+
+    asyncio.run(scenario())
+
+
+def _caldav_provider(
+    events: list[_FakeEvent],
+) -> tuple[CalDAVCalendarProvider, _FakeCalendar]:
+    calendar = _FakeCalendar(events)
+    provider = CalDAVCalendarProvider(
+        StaticCredentialResolver({"calendar.password": "secret"}),
+        url="https://example.com/dav/calendar/",
+        username="leon",
+        client_factory=lambda: _FakeCalDAVClient(calendar),
+        clock=lambda: NOW,
+    )
+    return provider, calendar
+
+
+def test_caldav_provider_full_contract() -> None:
+    future = _FakeEvent(
+        _FakeVEVENT(
+            uid="future-1",
+            summary="Planning sync",
+            description="Private planning notes",
+            location="Room 1",
+            start=NOW + timedelta(hours=1),
+            end=NOW + timedelta(hours=2),
+            tzid="Asia/Kolkata",
+            attendees=("alice@example.com",),
+            modified=NOW,
+        )
+    )
+    past = _FakeEvent(
+        _FakeVEVENT(
+            uid="past-1",
+            summary="Standup",
+            description="Daily standup",
+            start=NOW - timedelta(days=1),
+            end=NOW - timedelta(days=1, hours=-1),
+            tzid="UTC",
+        )
+    )
+
+    async def scenario() -> None:
+        provider, calendar = _caldav_provider([future, past])
+        with pytest.raises(IntegrationNotConnectedError):
+            await provider.upcoming_events()
+        await provider.connect()
+        assert provider.status.value == "connected"
+
+        listed = await provider.list_events(start=NOW, end=NOW + timedelta(days=2))
+        assert [event.id for event in listed] == ["future-1"]
+
+        searched = await provider.search_events(CalendarSearch("planning"))
+        assert [event.id for event in searched] == ["future-1"]
+
+        upcoming = await provider.upcoming_events(now=NOW)
+        assert [event.id for event in upcoming] == ["future-1"]
+        assert upcoming[0].timezone == "Asia/Kolkata"
+        assert upcoming[0].attendees == ("alice@example.com",)
+        assert upcoming[0].updated_at == NOW
+
+        read = await provider.read_event("future-1")
+        assert read.title == "Planning sync"
+
+        created = await provider.create_event(event_request())
+        assert created.timezone == "Asia/Kolkata"
+        assert "UID:" in calendar.created_ics[0]
+        assert "SUMMARY:Team sync" in calendar.created_ics[0]
+        assert "DTSTART;TZID=Asia/Kolkata:" in calendar.created_ics[0]
+
+        stored = next(
+            event
+            for event in [future, past]
+            if event.vobject_instance.vevent.uid.value == "future-1"
+        )
+        updated = await provider.update_event(
+            "future-1", CalendarEventUpdate(title="Updated sync", location="Room 2")
+        )
+        assert updated.title == "Updated sync"
+        assert updated.location == "Room 2"
+        assert stored.save_calls == 1
+        assert "SUMMARY:Updated sync" in stored.data
+
+        deleted = await provider.delete_event("future-1")
+        assert deleted is True
+        assert stored.delete_calls == 1
+
+    asyncio.run(scenario())
+
+
+def test_caldav_provider_skips_malformed_events() -> None:
+    malformed = _FakeEvent(
+        _FakeVEVENT(
+            uid="bad-1",
+            summary="Zero length",
+            start=NOW + timedelta(hours=1),
+            end=NOW + timedelta(hours=1),
+            tzid="UTC",
+        )
+    )
+
+    async def scenario() -> None:
+        provider, _calendar = _caldav_provider([malformed])
+        await provider.connect()
+        assert await provider.list_events() == ()
+
+    asyncio.run(scenario())

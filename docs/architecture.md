@@ -62,7 +62,7 @@ side-effect path.
 | `jarvis.vision` | Screenshot analysis contract plus OpenAI Responses and OpenAI-compatible adapters | 🚧 Experimental; semantic only |
 | `jarvis.browser` | Bounded public-web Playwright controller, snapshots, verified elements, and permissioned actions | 🚧 Experimental and opt-in |
 | `jarvis.tasks` | Versioned reminder persistence, timezone recurrence, notification leases, notifiers, and actions | ✅ Implemented foundation; delivery needs a running process |
-| `jarvis.integrations` | Lifecycle/operation contracts, credentials, bounded HTTPS transport, GitHub, email, and calendar interfaces | 🚧 GitHub experimental; email/calendar built-ins are in-memory |
+| `jarvis.integrations` | Lifecycle/operation contracts, credentials, bounded HTTPS transport, GitHub, SMTP/IMAP email, CalDAV calendar, and in-memory email/calendar interfaces | 🚧 Live adapters experimental; in-memory implementations are demo-only |
 | `jarvis.plugins` | API v1 metadata/context, entry-point discovery, staged registration, state, and lifecycle manager | 🚧 Implemented trusted-code foundation; unsandboxed |
 | `jarvis.gui` | Framework-neutral views/controller/permission broker and lazy PySide6/qasync adapter | 🚧 Experimental and optional |
 | `jarvis.bootstrap` | Composition root and deterministic startup/shutdown ownership shared by interfaces | ✅ Implemented foundation |
@@ -150,8 +150,10 @@ See [scheduling.md](scheduling.md).
 Integrations expose typed lifecycle/status/operation metadata and are registered
 before actions are composed. Credentials use explicit resolvers, while the
 built-in network transport fixes bounded JSON requests to one HTTPS origin.
-GitHub is a live adapter; email/calendar currently provide contracts and
-in-memory implementations.
+GitHub, SMTP/IMAP email, and CalDAV calendar are live adapters; email/calendar
+also ship deterministic in-memory implementations for tests and demos. Live
+email uses only the standard library, while CalDAV depends on the optional
+`integrations` extra.
 
 Plugins are installed `jarvis.plugins` entry points. Discovery can occur without
 import. A plugin context stages actions, integrations, and listeners for an
