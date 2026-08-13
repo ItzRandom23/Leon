@@ -197,7 +197,10 @@ class SQLiteReminderRepository:
                 metadata = candidate.stat(follow_symlinks=False)
                 if not stat.S_ISREG(metadata.st_mode):
                     raise OSError("database sidecar is not a regular file")
-                os.chmod(candidate, 0o600, follow_symlinks=False)
+                try:
+                    os.chmod(candidate, 0o600, follow_symlinks=False)
+                except NotImplementedError:
+                    os.chmod(candidate, 0o600)
 
     @property
     def database_path(self) -> Path | None:
