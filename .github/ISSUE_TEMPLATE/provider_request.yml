@@ -1,0 +1,117 @@
+name: Provider request
+description: Propose a new or changed LLM, vision, speech, or related provider adapter
+title: "[Provider]: "
+labels:
+  - provider
+  - proposal
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provider adapters can transmit private prompts, tool results, audio, or screenshots. Proposals need a narrow interface, explicit data flow, optional dependencies, and mock-based tests. Do not include credentials or private payloads.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched for an existing adapter or provider proposal.
+          required: true
+        - label: I reviewed the provider's current API documentation, terms, and data-handling information.
+          required: true
+        - label: This proposal does not require credentials or live paid calls in standard tests or CI.
+          required: true
+  - type: dropdown
+    id: capability
+    attributes:
+      label: Provider capability
+      options:
+        - Language model and tool calling
+        - Vision and image understanding
+        - Speech to text
+        - Text to speech
+        - Wake word
+        - Multiple provider interfaces
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Provider and API
+      description: Give the provider, product or API name, and version if one exists.
+      placeholder: Example Provider, Responses-compatible API v1
+    validations:
+      required: true
+  - type: textarea
+    id: user_value
+    attributes:
+      label: User value
+      description: What focused use case does this adapter enable that current adapters do not?
+    validations:
+      required: true
+  - type: dropdown
+    id: processing
+    attributes:
+      label: Processing location
+      options:
+        - Fully local
+        - Self-hosted or user-selected endpoint
+        - Provider-hosted service
+        - Hybrid
+    validations:
+      required: true
+  - type: textarea
+    id: interface
+    attributes:
+      label: Interface compatibility
+      description: Identify the JARVIS provider contract, endpoint shape, tool or structured-output or image support, streaming needs, and known incompatibilities.
+    validations:
+      required: true
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Configuration and authentication
+      description: List proposed provider names, model and base URL settings, environment variables, credential type, and secret-redaction behavior. Do not paste a real key.
+    validations:
+      required: true
+  - type: textarea
+    id: data_flow
+    attributes:
+      label: Data flow, privacy, and retention
+      description: What prompts, history, action schemas or results, audio, images, metadata, or identifiers leave the machine? Describe retention, training controls, regions, and deletion options.
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety boundaries
+      description: Explain how local schema validation and permissions remain authoritative, how malformed responses fail safely, and why the adapter cannot execute arbitrary code or claim unsupported grounding.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies, licensing, and platform support
+      description: List SDKs or binaries, licenses, package size, supported Python or OS versions, hardware needs, and why the standard library is insufficient.
+    validations:
+      required: true
+  - type: textarea
+    id: reliability
+    attributes:
+      label: Reliability and limits
+      description: Cover timeouts, payload limits, rate limits, retries, cancellation, offline behavior, costs, and user-facing failure messages.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test strategy
+      description: Describe injected transports or engines, fixtures, malformed-response cases, credential-redaction checks, and opt-in live testing if any.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Primary references
+      description: Link official API, privacy, retention, pricing, and licensing documentation.
+    validations:
+      required: true

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jarvis-plugin-example"
+version = "0.1.0"
+description = "A minimal, safe JARVIS plugin SDK example."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "JARVIS contributors" }]
+dependencies = ["jarvis-assistant>=0.3.0"]
+
+[project.entry-points."jarvis.plugins"]
+example = "jarvis_example.plugin:ExamplePlugin"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]

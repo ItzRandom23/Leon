@@ -1,0 +1,117 @@
+name: Integration request
+description: Propose a least-privilege external service or account integration
+title: "[Integration]: "
+labels:
+  - integration
+  - proposal
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Integrations can read private account data or mutate external systems. Do not include credentials, private payloads, customer data, or vulnerability details. This form is for a design proposal, not authorization to make live calls.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched for an existing integration or proposal.
+          required: true
+        - label: I reviewed the service's current official API, authentication, rate-limit, privacy, and retention documentation.
+          required: true
+        - label: Standard tests and CI will use injected fakes and require no live account, credential, or paid call.
+          required: true
+  - type: input
+    id: service
+    attributes:
+      label: Service and API
+      description: Name the service, API product, and version when one exists.
+      placeholder: Example Service REST API v2
+    validations:
+      required: true
+  - type: textarea
+    id: user_problem
+    attributes:
+      label: User problem
+      description: Describe one focused outcome this integration enables.
+    validations:
+      required: true
+  - type: textarea
+    id: operations
+    attributes:
+      label: Proposed operations
+      description: List each operation, classify it as read/write/delete, and give its READ/ACTION/SENSITIVE/DESTRUCTIVE category.
+      placeholder: |
+        - service.list_items — read — SENSITIVE
+        - service.create_item — write — SENSITIVE, always confirm
+    validations:
+      required: true
+  - type: textarea
+    id: auth
+    attributes:
+      label: Authentication and least privilege
+      description: Describe credential type, minimum scopes, account/resource restrictions, refresh, expiry, revocation, and secret storage. Do not paste a token.
+    validations:
+      required: true
+  - type: textarea
+    id: data_flow
+    attributes:
+      label: Data flow, privacy, and retention
+      description: List every identifier, query, content field, attachment, or metadata item sent/received and the provider's retention/training/region/deletion behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: confirmation
+    attributes:
+      label: Validation and consent binding
+      description: Explain strict schemas, bounded previews, mandatory confirmations, live target rechecks, and how stale or ambiguous targets fail closed.
+    validations:
+      required: true
+  - type: textarea
+    id: transport
+    attributes:
+      label: Transport and failure handling
+      description: Cover fixed origins, HTTPS, redirects, payload/time limits, pagination, rate limits, retries, sanitized errors, cancellation, and offline behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: consistency
+    attributes:
+      label: Idempotency and uncertain outcomes
+      description: Explain duplicate prevention, retry keys, partial failure, timeout-after-write behavior, verification, rollback limits, and recovery.
+    validations:
+      required: true
+  - type: textarea
+    id: lifecycle
+    attributes:
+      label: Lifecycle and cleanup
+      description: Describe connect/disconnect/close, credential resolution timing, resource ownership, concurrent calls, and failure isolation.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies, licensing, and platform support
+      description: List proposed SDKs/binaries and licenses, justify them, and identify supported Python/OS versions.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test strategy
+      description: Cover mocked transport/provider success, malformed responses, auth failure, denial with no call, stale target, limits, concurrency, cancellation, cleanup, and redaction.
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: State which service operations, automation, synchronization, or generic request surfaces remain out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Primary references
+      description: Link official API, auth/scope, privacy/retention, rate-limit, pricing, and SDK-license documentation.
+    validations:
+      required: true

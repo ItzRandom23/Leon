@@ -1,0 +1,116 @@
+name: New skill proposal
+description: Propose an isolated capability for the JARVIS skill architecture
+title: "[Skill]: "
+labels:
+  - skill
+  - proposal
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to define a skill or action boundary before implementation. Planned-roadmap capabilities require design and safety review; a proposal is not approval to implement them.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched for an existing skill or proposal with the same responsibility.
+          required: true
+        - label: This proposal describes one cohesive skill.
+          required: true
+  - type: input
+    id: name
+    attributes:
+      label: Proposed skill name
+      placeholder: weather
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose and user value
+      description: What single responsibility would the skill own?
+    validations:
+      required: true
+  - type: textarea
+    id: intents
+    attributes:
+      label: Example requests and responses
+      description: Include representative inputs, expected outputs, and an unsupported request.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Inputs, outputs, and failure behavior
+      description: Describe the skill's proposed contract and how failures are surfaced safely.
+    validations:
+      required: true
+  - type: input
+    id: platforms
+    attributes:
+      label: Supported platforms
+      placeholder: Windows; platform-independent; Linux only
+    validations:
+      required: true
+  - type: dropdown
+    id: safety_category
+    attributes:
+      label: Anticipated safety category
+      description: Choose the highest-impact operation the skill could perform.
+      options:
+        - READ
+        - ACTION
+        - SENSITIVE
+        - DESTRUCTIVE
+        - Unsure - needs design review
+    validations:
+      required: true
+  - type: textarea
+    id: access
+    attributes:
+      label: Data and system access
+      description: List files, applications, devices, accounts, network services, credentials, or personal data the skill could access or change.
+    validations:
+      required: true
+  - type: textarea
+    id: permissions
+    attributes:
+      label: Validation and confirmation
+      description: What allowlists, validation, previews, confirmations, cancellation, and recovery behavior are needed?
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and integrations
+      description: List proposed packages, APIs, services, environment variables, or credentials and explain why each is needed.
+  - type: textarea
+    id: schemas
+    attributes:
+      label: Action schemas
+      description: List proposed registered action names and strict parameters. Explain how unknown, oversized, or malformed inputs are rejected.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Boundaries and non-goals
+      description: Explain what belongs outside this skill.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test strategy
+      description: Cover routing, success, failures, platform differences, and how tests avoid real side effects.
+    validations:
+      required: true
+  - type: textarea
+    id: roadmap
+    attributes:
+      label: Roadmap fit
+      description: Identify the likely phase and any prerequisite work.
+    validations:
+      required: true

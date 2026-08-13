@@ -1,0 +1,79 @@
+name: Feature request
+description: Propose a focused improvement to JARVIS
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        JARVIS grows through small, reviewable changes. A request may belong to a future roadmap phase and is not automatically ready for implementation.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and roadmap entries for this request.
+          required: true
+        - label: I have described one focused user problem rather than a bundle of unrelated capabilities.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Who has the problem, and what are they unable to do today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: Describe observable behavior without assuming a particular implementation.
+      placeholder: Given ..., when ..., JARVIS should ...
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: Example interactions
+      description: Show concise terminal inputs and expected outputs where applicable.
+      render: text
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Roadmap fit
+      options:
+        - Phase 1-11 - Existing foundation improvement
+        - Phase 12 - Phone companion
+        - Phase 13 - Remote device control
+        - Phase 14 - Advanced computer-use agent
+        - Phase 15 - Autonomous task execution
+        - Phase 16 - Multi-device JARVIS network
+        - Phase 17+ - Community-driven development
+        - Cross-cutting or unsure
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety and privacy impact
+      description: What data, applications, files, devices, accounts, or external systems could this access or change? What should require confirmation?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Non-goals
+      description: State what this request deliberately would not implement.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe existing workarounds or narrower approaches.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add platform details, sketches, or links without including sensitive data.

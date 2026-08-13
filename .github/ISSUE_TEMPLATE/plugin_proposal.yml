@@ -1,0 +1,100 @@
+name: Plugin proposal
+description: Propose a trusted installed Python extension for the JARVIS plugin API
+title: "[Plugin]: "
+labels:
+  - plugin
+  - proposal
+body:
+  - type: markdown
+    attributes:
+      value: |
+        JARVIS plugins are not sandboxed. Installing or enabling one runs trusted Python with the same OS access as JARVIS. Do not include credentials, private data, or vulnerability details.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched for an existing plugin, skill, integration, or proposal with this responsibility.
+          required: true
+        - label: I understand plugin metadata is informational and does not enforce an OS sandbox.
+          required: true
+        - label: Standard tests and CI will not perform real desktop, network, account, or destructive side effects.
+          required: true
+  - type: input
+    id: identity
+    attributes:
+      label: Package and entry-point identity
+      description: Give the proposed distribution name and jarvis.plugins entry-point ID.
+      placeholder: jarvis-example-plugin; example
+    validations:
+      required: true
+  - type: textarea
+    id: user_value
+    attributes:
+      label: User value and responsibility
+      description: Describe one cohesive responsibility and why it should be an out-of-tree plugin.
+    validations:
+      required: true
+  - type: textarea
+    id: provenance
+    attributes:
+      label: Source, maintainers, and distribution
+      description: Identify the source repository, maintainers, package index/artifact channel, signing or provenance information, update policy, and license.
+    validations:
+      required: true
+  - type: textarea
+    id: metadata
+    attributes:
+      label: API and metadata declaration
+      description: Give plugin API version, name/version/author/description, declared permissions, capabilities, and dependencies.
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Registered capabilities
+      description: List each action, integration, and event listener, including strict parameters, risk category, confirmation behavior, and name-collision handling.
+    validations:
+      required: true
+  - type: textarea
+    id: direct_access
+    attributes:
+      label: Direct process and system access
+      description: List files, environment variables, credentials, network services, subprocesses, threads, devices, desktop APIs, global state, and telemetry the plugin code could access.
+    validations:
+      required: true
+  - type: textarea
+    id: data_flow
+    attributes:
+      label: Data flow and retention
+      description: Explain what user/provider data enters the plugin, what leaves the machine/process, and what is stored, logged, retained, or deleted.
+    validations:
+      required: true
+  - type: textarea
+    id: lifecycle
+    attributes:
+      label: Lifecycle, rollback, and cleanup
+      description: Describe initialize/register/shutdown, staged commit, partial failure rollback, cancellation, context revocation, repeated disable/shutdown, and cleanup of unmanaged resources.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependency and supply-chain review
+      description: List direct/transitive dependencies, build backend, native code/binaries, licenses, supported platforms, pin/update policy, and why each dependency is needed.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test strategy
+      description: Cover discovery without import, compatibility, duplicate IDs/capabilities, denial, every lifecycle failure, reverse rollback, cancellation, persistence, cleanup, and redaction using fakes.
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals and trust warning
+      description: State what is out of scope and the exact user-facing warning that makes unsandboxed execution clear.
+    validations:
+      required: true
