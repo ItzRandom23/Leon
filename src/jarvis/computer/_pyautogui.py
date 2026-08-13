@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 
 from jarvis.computer.errors import AutomationUnavailableError
 
@@ -20,7 +20,7 @@ class PyAutoGUIAdapter:
     def _backend(self) -> ModuleType:
         if self._pyautogui is None:
             try:
-                self._pyautogui = importlib.import_module("pyautogui")
+                self._pyautogui = cast(Any, importlib.import_module("pyautogui"))
             except Exception as exc:
                 raise AutomationUnavailableError(
                     "desktop input requires the optional 'pyautogui' dependency "

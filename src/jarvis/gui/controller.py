@@ -430,8 +430,8 @@ class GuiController:
             self._event_unsubscribe = None
         self._permission_unsubscribe()
         self._set_state(AssistantState.STOPPED, "Closed")
-        for task in tuple(self._observer_tasks):
-            task.cancel()
+        for observer in tuple(self._observer_tasks):
+            observer.cancel()
         self._listeners.clear()
 
     async def aclose(self, *, timeout_seconds: float = 2.0) -> None:
