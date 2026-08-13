@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 from jarvis.memory.models import MemoryRecord
 from jarvis.memory.repository import MemoryCategoryLike, MemoryRepository
 
@@ -38,7 +39,7 @@ class MemoryManager:
 
         return self._repository.get(category, key)
 
-    def list(self, category: MemoryCategoryLike | None = None) -> list[MemoryRecord]:
+    def list(self, category: MemoryCategoryLike | None = None) -> builtins.list[MemoryRecord]:
         """List stored memories, optionally in one category."""
 
         return self._repository.list(category)
@@ -49,7 +50,7 @@ class MemoryManager:
         category: MemoryCategoryLike | None = None,
         *,
         limit: int | None = None,
-    ) -> list[MemoryRecord]:
+    ) -> builtins.list[MemoryRecord]:
         """Search stored memory keys and values."""
 
         return self._repository.search(query, category, limit=limit)

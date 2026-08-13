@@ -98,9 +98,10 @@ class GuiPermissionBroker:
                 await asyncio.wait_for(asyncio.shield(future), timeout=self.timeout_seconds)
             ) is True
         except (TimeoutError, asyncio.CancelledError):
+            current_task = asyncio.current_task()
             if (
-                isinstance(asyncio.current_task(), asyncio.Task)
-                and asyncio.current_task().cancelling()
+                isinstance(current_task, asyncio.Task)
+                and current_task.cancelling()
             ):
                 raise
             return False
@@ -149,7 +150,7 @@ class GuiPermissionBroker:
                     # Listeners are presentation notifications, never part of the
                     # permission decision. Run async observers independently.
                     try:
-                        asyncio.get_running_loop().create_task(result)
+                        asyncio.ensure_future(result)
                     except RuntimeError:
                         close = getattr(result, "close", None)
                         if callable(close):

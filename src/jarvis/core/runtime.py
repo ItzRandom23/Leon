@@ -293,9 +293,12 @@ class JarvisRuntime:
         )
 
     async def _process_with_ai(self, command: str) -> RuntimeResponse | None:
+        provider = self.llm
+        if provider is None:
+            return None
         self.conversation.append(ChatMessage("user", command))
         try:
-            response = await self.llm.complete_with_tools(
+            response = await provider.complete_with_tools(
                 self.conversation.messages,
                 self.registry.tool_schemas(),
             )
@@ -365,7 +368,7 @@ class JarvisRuntime:
 
         fallback_message = _summarize_results(results)
         try:
-            final_response = await self.llm.complete_with_tools(
+            final_response = await provider.complete_with_tools(
                 self.conversation.messages,
                 (),
             )

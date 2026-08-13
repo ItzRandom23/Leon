@@ -50,7 +50,7 @@ def _windows_system_directory() -> Path:
         raise OSError("The Windows system directory is unavailable on this platform")
 
     buffer = ctypes.create_unicode_buffer(32_768)
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)  # type: ignore[attr-defined]
+    kernel32 = getattr(ctypes, "WinDLL")("kernel32", use_last_error=True)
     length = kernel32.GetSystemDirectoryW(buffer, len(buffer))
     if length == 0 or length >= len(buffer):
         raise OSError(ctypes.get_last_error(), "Could not resolve the Windows system directory")

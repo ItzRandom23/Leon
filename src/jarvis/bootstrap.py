@@ -6,6 +6,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from functools import partial
+from typing import Any
 
 from jarvis.actions import ActionServices, build_action_registry
 from jarvis.ai import LLMProvider, OpenAICompatibleProvider, OpenAIResponsesProvider
@@ -60,6 +61,7 @@ from jarvis.vision import (
     OpenAICompatibleVisionProvider,
     OpenAIResponsesVisionProvider,
     VisionAnalyzer,
+    VisionProvider,
 )
 from jarvis.voice import Pyttsx3TTS, SpeechRecognitionSTT, SpeechToText, TextToSpeech
 
@@ -155,7 +157,7 @@ class JarvisApplication:
         cancellation_requested = False
         if self.scheduler is not None:
             self.scheduler.stop()
-        operations = []
+        operations: list[asyncio.Future[Any]] = []
         if self._scheduler_task is not None:
             operations.append(self._scheduler_task)
         if self.browser is not None:
@@ -374,39 +376,53 @@ def _create_llm_provider(config: JarvisConfig) -> LLMProvider | None:
         return None
     provider = settings.provider.casefold()
     base_url = settings.base_url or "https://api.openai.com/v1"
-    common = {
-        "model": settings.model,
-        "base_url": base_url,
-        "api_key": settings.api_key,
-        "timeout_seconds": settings.timeout_seconds,
-    }
+    api_key = settings.api_key
     try:
         if provider == "openai":
-            return OpenAIResponsesProvider(**common)
+            if api_key is None:
+                raise ConfigError("The OpenAI provider requires JARVIS_AI_API_KEY")
+            return OpenAIResponsesProvider(
+                model=settings.model,
+                base_url=base_url,
+                api_key=api_key,
+                timeout_seconds=settings.timeout_seconds,
+            )
         if provider == "openai-compatible":
-            return OpenAICompatibleProvider(**common)
+            return OpenAICompatibleProvider(
+                model=settings.model,
+                base_url=base_url,
+                api_key=api_key,
+                timeout_seconds=settings.timeout_seconds,
+            )
     except ValueError as error:
         raise ConfigError(f"Invalid AI provider configuration: {error}") from None
     raise ConfigError(f"Unsupported AI provider: {settings.provider!r}")
 
 
-def _create_vision_provider(config: JarvisConfig):  # type: ignore[no-untyped-def]
+def _create_vision_provider(config: JarvisConfig) -> VisionProvider | None:
     settings = config.vision
     if not settings.enabled:
         return None
     provider = settings.provider.casefold()
     base_url = settings.base_url or "https://api.openai.com/v1"
-    common = {
-        "model": settings.model,
-        "base_url": base_url,
-        "api_key": settings.api_key,
-        "timeout_seconds": settings.timeout_seconds,
-    }
+    api_key = settings.api_key
     try:
         if provider == "openai":
-            return OpenAIResponsesVisionProvider(**common)
+            if api_key is None:
+                raise ConfigError("The OpenAI vision provider requires JARVIS_VISION_API_KEY")
+            return OpenAIResponsesVisionProvider(
+                model=settings.model,
+                base_url=base_url,
+                api_key=api_key,
+                timeout_seconds=settings.timeout_seconds,
+            )
         if provider == "openai-compatible":
-            return OpenAICompatibleVisionProvider(**common)
+            return OpenAICompatibleVisionProvider(
+                model=settings.model,
+                base_url=base_url,
+                api_key=api_key,
+                timeout_seconds=settings.timeout_seconds,
+            )
     except ValueError as error:
         raise ConfigError(f"Invalid vision provider configuration: {error}") from None
     raise ConfigError(f"Unsupported vision provider: {settings.provider!r}")

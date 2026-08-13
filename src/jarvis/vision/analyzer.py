@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import AbstractContextManager, asynccontextmanager
 from pathlib import Path
 from typing import Protocol
 
@@ -12,21 +12,14 @@ from jarvis.vision.providers import VisionProvider
 
 
 class CapturedImage(Protocol):
-    path: Path
-
-
-class TemporaryCapture(Protocol):
-    """Minimal screen-capture boundary consumed by the analyzer."""
-
-    def __enter__(self) -> CapturedImage: ...
-
-    def __exit__(self, exc_type: object, exc_value: object, traceback: object) -> None: ...
+    @property
+    def path(self) -> Path: ...
 
 
 class ScreenCapture(Protocol):
     """Screen provider capable of temporary capture cleanup."""
 
-    def temporary_screen(self) -> TemporaryCapture: ...
+    def temporary_screen(self) -> AbstractContextManager[CapturedImage]: ...
 
 
 class VisionAnalyzer:

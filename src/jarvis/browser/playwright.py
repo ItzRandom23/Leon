@@ -86,7 +86,7 @@ class _BoundElement:
 async def _finish_async_cleanup(awaitable: Awaitable[Any]) -> bool:
     """Observe cleanup to completion even after caller cancellation."""
 
-    task = asyncio.create_task(awaitable)
+    task = asyncio.ensure_future(awaitable)
     cancelled = False
     while not task.done():
         try:

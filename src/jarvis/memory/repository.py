@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 from pathlib import Path
 from types import TracebackType
 from typing import Protocol, runtime_checkable
@@ -42,7 +43,7 @@ class MemoryRepository(Protocol):
 
         ...
 
-    def list(self, category: MemoryCategoryLike | None = None) -> list[MemoryRecord]:
+    def list(self, category: MemoryCategoryLike | None = None) -> builtins.list[MemoryRecord]:
         """Return memories, optionally limited to a category."""
 
         ...
@@ -53,7 +54,7 @@ class MemoryRepository(Protocol):
         category: MemoryCategoryLike | None = None,
         *,
         limit: int | None = None,
-    ) -> list[MemoryRecord]:
+    ) -> builtins.list[MemoryRecord]:
         """Search keys and values for a literal, case-insensitive substring."""
 
         ...

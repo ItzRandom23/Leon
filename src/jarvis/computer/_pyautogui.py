@@ -15,7 +15,7 @@ class PyAutoGUIAdapter:
     def __init__(self, module: Any | None = None) -> None:
         self._pyautogui: Any | None = module
         if module is not None:
-            module.FAILSAFE = True
+            setattr(module, "FAILSAFE", True)
 
     def _backend(self) -> ModuleType:
         if self._pyautogui is None:
@@ -26,7 +26,7 @@ class PyAutoGUIAdapter:
                     "desktop input requires the optional 'pyautogui' dependency "
                     "and an interactive desktop"
                 ) from exc
-            self._pyautogui.FAILSAFE = True
+            setattr(self._pyautogui, "FAILSAFE", True)
         return self._pyautogui
 
     def size(self) -> tuple[int, int]:

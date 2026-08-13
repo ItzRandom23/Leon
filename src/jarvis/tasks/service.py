@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Callable
 from datetime import UTC, date, datetime, time, timedelta
 
@@ -165,10 +166,12 @@ class ReminderService:
         status: ReminderStatus | str | None = None,
         *,
         limit: int | None = None,
-    ) -> list[Reminder]:
+    ) -> builtins.list[Reminder]:
         return list(self.repository.list(status, limit=limit))
 
-    def due(self, now: datetime | None = None, *, limit: int | None = None) -> list[Reminder]:
+    def due(
+        self, now: datetime | None = None, *, limit: int | None = None
+    ) -> builtins.list[Reminder]:
         return list(self.repository.due(now, limit=limit))
 
     def missed(
@@ -176,7 +179,7 @@ class ReminderService:
         now: datetime | None = None,
         *,
         limit: int | None = None,
-    ) -> list[Reminder]:
+    ) -> builtins.list[Reminder]:
         return list(self.repository.missed(now, limit=limit))
 
     def cancel(self, reminder_id: int) -> Reminder | None:

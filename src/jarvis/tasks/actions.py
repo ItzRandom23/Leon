@@ -266,7 +266,7 @@ def register_reminder_actions(
         try:
             expected_due = datetime.fromisoformat(expected_due_at.replace("Z", "+00:00"))
             due = datetime.fromisoformat(scheduled_at.replace("Z", "+00:00"))
-            reminder = service.edit_scheduled(
+            reminder = service.reminders.edit_scheduled(
                 reminder_id,
                 message=message,
                 due_at=due,

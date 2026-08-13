@@ -36,6 +36,7 @@ from jarvis.gui.models import (
     ReminderView,
     SettingView,
     StatusView,
+    UIValue,
     clean_text,
     utc_now,
 )
@@ -112,7 +113,7 @@ class GuiController:
         self._activities: list[ActionActivity] = []
         self._page_cache: dict[Page, PageData] = {}
         self._listeners: list[UpdateListener] = []
-        self._observer_tasks: set[asyncio.Task[Any]] = set()
+        self._observer_tasks: set[asyncio.Future[Any]] = set()
         self._active_task: asyncio.Task[Any] | None = None
         self._closed = False
         self._event_unsubscribe: Callable[[], bool] | None = None
@@ -589,7 +590,7 @@ class GuiController:
                 result = listener(update)
                 if inspect.isawaitable(result):
                     try:
-                        task = asyncio.get_running_loop().create_task(result)
+                        task = asyncio.ensure_future(result)
                     except RuntimeError:
                         close = getattr(result, "close", None)
                         if callable(close):
@@ -658,7 +659,7 @@ def _confirmer_uses_broker(confirmer: object, broker: GuiPermissionBroker) -> bo
     )
 
 
-def _activity_payload(activity: ActionActivity) -> dict[str, str | None]:
+def _activity_payload(activity: ActionActivity) -> dict[str, UIValue]:
     return {
         "request_id": activity.request_id,
         "action": activity.action_name,

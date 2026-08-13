@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import inspect
 from collections import Counter
 from collections.abc import Awaitable, Callable, Iterable, Mapping
 from dataclasses import dataclass, field, replace
 from hashlib import sha256
 from importlib import metadata as importlib_metadata
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from jarvis.core.actions import Action, ActionRegistry
 from jarvis.core.events import Event, EventBus, EventName
@@ -440,7 +441,7 @@ class PluginManager:
         self,
         record: _Record,
         context: PluginContext,
-    ) -> list[_RegistrationHandle]:
+    ) -> builtins.list[_RegistrationHandle]:
         actions = context.staged_actions
         integrations = context.staged_integrations
         listeners = context.staged_event_listeners
@@ -472,7 +473,13 @@ class PluginManager:
                     listener.name,
                     _isolated_event_handler(listener.handler),
                 )
-                committed.append(_RegistrationHandle("event", str(listener.name), unsubscribe))
+
+                def remove_listener(unsubscribe: Callable[[], bool] = unsubscribe) -> None:
+                    unsubscribe()
+
+                committed.append(
+                    _RegistrationHandle("event", str(listener.name), remove_listener)
+                )
             for action in actions:
                 isolated_action = _isolated_action(action)
                 self._actions.register(isolated_action)
@@ -670,9 +677,11 @@ def _select_entry_points(value: object) -> Iterable[EntryPointLike]:
         return tuple(select(group=PLUGIN_ENTRY_POINT_GROUP))
     if isinstance(value, Mapping):
         return tuple(value.get(PLUGIN_ENTRY_POINT_GROUP, ()))
+    if not isinstance(value, Iterable) or isinstance(value, (str, bytes)):
+        return ()
     return tuple(
-        entry_point
-        for entry_point in value  # type: ignore[union-attr]
+        cast(EntryPointLike, entry_point)
+        for entry_point in value
         if getattr(entry_point, "group", PLUGIN_ENTRY_POINT_GROUP) == PLUGIN_ENTRY_POINT_GROUP
     )
 

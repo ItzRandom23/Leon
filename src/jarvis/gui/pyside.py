@@ -10,7 +10,7 @@ import json
 import logging
 import sys
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 from jarvis.gui.controller import GuiBusyError, GuiController, GuiControllerError
 from jarvis.gui.data import ApplicationDataProvider
@@ -51,7 +51,7 @@ def create_main_window(
     not need Qt. The caller owns the QApplication and async event loop.
     """
 
-    qt = _load_gui_dependencies()
+    qt: Any = _load_gui_dependencies()
     selected_theme = Theme(theme)
     nav_pages = tuple(Page)
 
@@ -301,7 +301,11 @@ def create_main_window(
             columns = _PAGE_COLUMNS[page]
             target.setRowCount(len(data))
             for row, record in enumerate(data):
-                values = dataclasses.asdict(record) if dataclasses.is_dataclass(record) else {}
+                values = (
+                    dataclasses.asdict(cast(Any, record))
+                    if dataclasses.is_dataclass(record) and not isinstance(record, type)
+                    else {}
+                )
                 for column, (key, _label) in enumerate(columns):
                     value = values.get(key, "")
                     if isinstance(value, bool):

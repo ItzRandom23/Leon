@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import os
 import sqlite3
 import stat
@@ -253,7 +254,7 @@ class SQLiteMemoryRepository:
                 raise MemoryRepositoryError("Could not read the memory") from exc
         return None if row is None else _record_from_row(row)
 
-    def list(self, category: MemoryCategoryLike | None = None) -> list[MemoryRecord]:
+    def list(self, category: MemoryCategoryLike | None = None) -> builtins.list[MemoryRecord]:
         """Return all memories in deterministic category/key order."""
 
         parsed_category = None if category is None else _parse_category(category)
@@ -280,7 +281,7 @@ class SQLiteMemoryRepository:
         category: MemoryCategoryLike | None = None,
         *,
         limit: int | None = None,
-    ) -> list[MemoryRecord]:
+    ) -> builtins.list[MemoryRecord]:
         """Search keys and values for a literal, case-insensitive substring."""
 
         pattern = f"%{_escape_like(_prepare_query(query))}%"

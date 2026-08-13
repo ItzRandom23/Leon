@@ -7,6 +7,7 @@ passed to a shell or treated as executable/process names.
 from __future__ import annotations
 
 import ctypes
+import importlib
 import logging
 import os
 import platform
@@ -79,7 +80,7 @@ def _is_windows_elevated() -> bool:
     if platform.system() != "Windows":
         return False
     try:
-        return bool(ctypes.windll.shell32.IsUserAnAdmin())  # type: ignore[attr-defined]
+        return bool(getattr(ctypes, "windll").shell32.IsUserAnAdmin())
     except (AttributeError, OSError):
         # Discovery from user-writable install locations is unsafe if privilege
         # state cannot be established on Windows.
@@ -166,7 +167,7 @@ def _get_windows_system_directory() -> Path:
     if platform.system() != "Windows":
         raise UnsupportedPlatformError("Windows application paths require Windows")
     buffer = ctypes.create_unicode_buffer(32_768)
-    length = ctypes.windll.kernel32.GetSystemDirectoryW(buffer, len(buffer))  # type: ignore[attr-defined]
+    length = getattr(ctypes, "windll").kernel32.GetSystemDirectoryW(buffer, len(buffer))
     if not length or length >= len(buffer):
         raise OSError("Windows did not return its system directory")
     path = Path(buffer.value)
@@ -230,16 +231,29 @@ class WindowsTrustedPathProvider:
         if platform.system() != "Windows":
             return ()
         try:
-            import winreg
+            winreg = importlib.import_module("winreg")
         except ImportError:
             return ()
 
+        open_key = getattr(winreg, "OpenKey", None)
+        query_value = getattr(winreg, "QueryValueEx", None)
+        hives = tuple(
+            hive
+            for hive in (
+                getattr(winreg, "HKEY_CURRENT_USER", None),
+                getattr(winreg, "HKEY_LOCAL_MACHINE", None),
+            )
+            if hive is not None
+        )
+        if not callable(open_key) or not callable(query_value) or not hives:
+            return ()
+
         locations: list[Path] = []
-        for hive in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+        for hive in hives:
             for key_name in self._VSCODE_REGISTRY_KEYS:
                 try:
-                    with winreg.OpenKey(hive, key_name) as key:
-                        value, _ = winreg.QueryValueEx(key, "InstallLocation")
+                    with open_key(hive, key_name) as key:
+                        value, _ = query_value(key, "InstallLocation")
                 except OSError:
                     continue
                 location = Path(str(value))

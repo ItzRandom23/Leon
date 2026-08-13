@@ -66,7 +66,7 @@ class CtypesWindowsApi:
 
     def __init__(self) -> None:
         try:
-            self._user32 = ctypes.windll.user32  # type: ignore[attr-defined]
+            self._user32 = getattr(ctypes, "windll").user32
         except AttributeError as exc:
             raise UnsupportedPlatformError("native window control requires Windows") from exc
 
@@ -94,7 +94,11 @@ class CtypesWindowsApi:
 
     def visible_windows(self) -> tuple[int, ...]:
         handles: list[int] = []
-        callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+        callback_type = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)(
+            wintypes.BOOL,
+            wintypes.HWND,
+            wintypes.LPARAM,
+        )
 
         @callback_type
         def collect(handle: int, _: int) -> bool:

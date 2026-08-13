@@ -259,7 +259,7 @@ class ApplicationDataProvider:
         result: list[SettingView] = []
         for section, values in safe.items():
             if isinstance(values, dict):
-                entries = values.items()
+                entries: Iterable[tuple[str, object]] = values.items()
             else:
                 entries = (("value", values),)
             for key, value in entries:

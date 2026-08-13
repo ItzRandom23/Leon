@@ -498,7 +498,8 @@ def _register_screen_and_window_actions(registry: ActionRegistry, services: Acti
 
 
 def _register_memory_actions(registry: ActionRegistry, services: ActionServices) -> None:
-    assert services.memory is not None
+    memory = services.memory
+    assert memory is not None
     category = ActionParameter(
         "category",
         str,
@@ -514,7 +515,7 @@ def _register_memory_actions(registry: ActionRegistry, services: ActionServices)
     )
     async def remember(category: str, key: str, value: str) -> ActionResult:
         try:
-            record = await asyncio.to_thread(services.memory.remember, category, key, value)
+            record = await asyncio.to_thread(memory.remember, category, key, value)
             if services.events:
                 await services.events.publish(
                     EventName.MEMORY_CREATED,
@@ -536,7 +537,7 @@ def _register_memory_actions(registry: ActionRegistry, services: ActionServices)
     )
     async def recall_memory(category: str, key: str) -> ActionResult:
         try:
-            record = await asyncio.to_thread(services.memory.recall, category, key)
+            record = await asyncio.to_thread(memory.recall, category, key)
             if record is None:
                 return ActionResult.succeeded(
                     "recall_memory", message=f"I don't have a stored memory for {key}."
@@ -564,7 +565,7 @@ def _register_memory_actions(registry: ActionRegistry, services: ActionServices)
     )
     async def list_memories(category: str | None = None) -> ActionResult:
         try:
-            records = await asyncio.to_thread(services.memory.list, category)
+            records = await asyncio.to_thread(memory.list, category)
             message = (
                 "Memories:\n"
                 + "\n".join(
@@ -596,7 +597,7 @@ def _register_memory_actions(registry: ActionRegistry, services: ActionServices)
     )
     async def search_memories(query: str, category: str | None = None) -> ActionResult:
         try:
-            records = await asyncio.to_thread(services.memory.search, query, category)
+            records = await asyncio.to_thread(memory.search, query, category)
             return ActionResult.succeeded(
                 "search_memories",
                 message=(
@@ -621,7 +622,7 @@ def _register_memory_actions(registry: ActionRegistry, services: ActionServices)
     )
     async def forget_memory(category: str, key: str) -> ActionResult:
         try:
-            removed = await asyncio.to_thread(services.memory.forget, category, key)
+            removed = await asyncio.to_thread(memory.forget, category, key)
             if removed and services.events:
                 await services.events.publish(
                     EventName.MEMORY_DELETED,
@@ -650,7 +651,7 @@ def _register_memory_actions(registry: ActionRegistry, services: ActionServices)
     )
     async def clear_memories(category: str | None = None) -> ActionResult:
         try:
-            count = await asyncio.to_thread(services.memory.clear, category)
+            count = await asyncio.to_thread(memory.clear, category)
             if count and services.events:
                 await services.events.publish(
                     EventName.MEMORY_DELETED,
@@ -666,7 +667,8 @@ def _register_memory_actions(registry: ActionRegistry, services: ActionServices)
 
 
 def _register_vision_actions(registry: ActionRegistry, services: ActionServices) -> None:
-    assert services.vision is not None
+    vision = services.vision
+    assert vision is not None
 
     @registry.action(
         name="analyze_screen",
@@ -680,7 +682,7 @@ def _register_vision_actions(registry: ActionRegistry, services: ActionServices)
     )
     async def analyze_screen(prompt: str = "Describe the screen.") -> ActionResult:
         try:
-            analysis = await services.vision.analyze_screen(prompt)
+            analysis = await vision.analyze_screen(prompt)
             return ActionResult.succeeded(
                 "analyze_screen",
                 message=analysis.description,

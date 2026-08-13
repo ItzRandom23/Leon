@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import json
 import os
 import sqlite3
@@ -173,7 +174,9 @@ class SQLiteReminderRepository:
                 metadata = os.fstat(descriptor)
                 if not stat.S_ISREG(metadata.st_mode):
                     raise OSError("database target is not a regular file")
-                os.fchmod(descriptor, 0o600)
+                secure_descriptor = getattr(os, "fchmod", None)
+                if callable(secure_descriptor):
+                    secure_descriptor(descriptor, 0o600)
             finally:
                 os.close(descriptor)
             if path.is_symlink() or not path.is_file():
@@ -326,7 +329,11 @@ class SQLiteReminderRepository:
                     """,
                     parameters,
                 )
-                row = self._select_by_id(int(cursor.lastrowid))
+                created_id = cursor.lastrowid
+                if created_id is None:
+                    self._connection.rollback()
+                    raise ReminderRepositoryError("The created reminder has no database identifier")
+                row = self._select_by_id(int(created_id))
                 self._connection.commit()
             except ReminderConflictError:
                 self._connection.rollback()
@@ -373,7 +380,7 @@ class SQLiteReminderRepository:
         status: ReminderStatus | str | None = None,
         *,
         limit: int | None = None,
-    ) -> list[Reminder]:
+    ) -> builtins.list[Reminder]:
         parsed_status = None if status is None else _parse_status(status)
         bounded_limit = _prepare_limit(limit)
         sql = f"SELECT {_SELECT_COLUMNS} FROM reminders"
@@ -395,7 +402,9 @@ class SQLiteReminderRepository:
 
     list_reminders = list
 
-    def due(self, now: datetime | None = None, *, limit: int | None = None) -> list[Reminder]:
+    def due(
+        self, now: datetime | None = None, *, limit: int | None = None
+    ) -> builtins.list[Reminder]:
         threshold = self._now() if now is None else utc_datetime(now, "now")
         return self._scheduled_before(threshold, inclusive=True, limit=limit)
 
@@ -408,7 +417,7 @@ class SQLiteReminderRepository:
         owner: str,
         lease_until: datetime,
         limit: int | None = None,
-    ) -> list[Reminder]:
+    ) -> builtins.list[Reminder]:
         """Atomically lease due occurrences for one scheduler runner."""
 
         threshold = self._now() if now is None else utc_datetime(now, "now")
@@ -569,7 +578,7 @@ class SQLiteReminderRepository:
         now: datetime | None = None,
         *,
         limit: int | None = None,
-    ) -> list[Reminder]:
+    ) -> builtins.list[Reminder]:
         threshold = self._now() if now is None else utc_datetime(now, "now")
         return self._scheduled_before(threshold, inclusive=False, limit=limit)
 
@@ -581,7 +590,7 @@ class SQLiteReminderRepository:
         *,
         inclusive: bool,
         limit: int | None,
-    ) -> list[Reminder]:
+    ) -> builtins.list[Reminder]:
         bounded_limit = _prepare_limit(limit)
         operator = "<=" if inclusive else "<"
         sql = (

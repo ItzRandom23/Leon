@@ -319,7 +319,8 @@ def _serialize_message(message: ChatMessage) -> dict[str, Any]:
 def _canonical_function(tool: ToolSchema) -> dict[str, Any]:
     """Accept canonical or Chat-Completions-wrapped function definitions."""
 
-    function = tool.get("function") if isinstance(tool.get("function"), Mapping) else tool
+    wrapped = tool.get("function")
+    function: Mapping[str, Any] = wrapped if isinstance(wrapped, Mapping) else tool
     name = function.get("name")
     description = function.get("description")
     parameters = function.get("parameters")
