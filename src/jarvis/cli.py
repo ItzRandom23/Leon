@@ -448,6 +448,7 @@ def _optional_dependency_checks(config: JarvisConfig) -> list[tuple[str, str, bo
         ("PySide6", "desktop GUI toolkit", False),
         ("qasync", "GUI async event-loop bridge", False),
         ("plyer", "desktop reminder notifications", config.scheduler.desktop_notifications),
+        ("caldav", "CalDAV calendar adapter", config.integrations.calendar_provider == "caldav"),
     ):
         available = importlib.util.find_spec(module) is not None
         status = "ok" if available else ("error" if needed else "warn")
@@ -518,17 +519,78 @@ def _integration_checks(config: JarvisConfig) -> list[tuple[str, str, bool]]:
         )
     else:
         checks.append(("warn", "GitHub integration is disabled", True))
-    for label, provider in (
-        ("Email", config.integrations.email_provider),
-        ("Calendar", config.integrations.calendar_provider),
-    ):
-        supported = provider in {"none", "memory", "in-memory"}
+    settings = config.integrations
+    checks.append(
+        (
+            "warn" if settings.email_provider == "none" else "ok",
+            f"Email provider: {settings.email_provider}",
+            True,
+        )
+    )
+    if settings.email_provider == "smtp":
+        hosts = (bool(settings.email_smtp_host), bool(settings.email_imap_host))
         checks.append(
             (
-                "ok" if supported and provider != "none" else ("warn" if supported else "error"),
-                f"{label} provider: {provider}",
-                supported,
+                "ok" if any(hosts) else "error",
+                "Email SMTP/IMAP host configured",
+                any(hosts),
             )
+        )
+        checks.append(
+            (
+                "ok" if all(hosts) else "warn",
+                "Email has SMTP and IMAP hosts (read and send)",
+                all(hosts),
+            )
+        )
+        checks.append(
+            (
+                "ok" if settings.email_username else "error",
+                "Email username configured",
+                bool(settings.email_username),
+            )
+        )
+        checks.append(
+            (
+                "ok" if settings.email_password else "error",
+                "Email password (JARVIS_EMAIL_PASSWORD) configured",
+                bool(settings.email_password),
+            )
+        )
+    elif settings.email_provider not in {"none", "memory", "in-memory"}:
+        checks.append(("error", f"Unsupported email provider: {settings.email_provider}", False))
+    checks.append(
+        (
+            "warn" if settings.calendar_provider == "none" else "ok",
+            f"Calendar provider: {settings.calendar_provider}",
+            True,
+        )
+    )
+    if settings.calendar_provider == "caldav":
+        checks.append(
+            (
+                "ok" if settings.calendar_url else "error",
+                "CalDAV endpoint configured",
+                bool(settings.calendar_url),
+            )
+        )
+        checks.append(
+            (
+                "ok" if settings.calendar_username else "error",
+                "CalDAV username configured",
+                bool(settings.calendar_username),
+            )
+        )
+        checks.append(
+            (
+                "ok" if settings.calendar_password else "error",
+                "Calendar password (JARVIS_CALENDAR_PASSWORD) configured",
+                bool(settings.calendar_password),
+            )
+        )
+    elif settings.calendar_provider not in {"none", "memory", "in-memory"}:
+        checks.append(
+            ("error", f"Unsupported calendar provider: {settings.calendar_provider}", False)
         )
     return checks
 
