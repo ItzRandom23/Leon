@@ -99,10 +99,7 @@ class GuiPermissionBroker:
             ) is True
         except (TimeoutError, asyncio.CancelledError):
             current_task = asyncio.current_task()
-            if (
-                isinstance(current_task, asyncio.Task)
-                and current_task.cancelling()
-            ):
+            if isinstance(current_task, asyncio.Task) and current_task.cancelling():
                 raise
             return False
         except Exception:

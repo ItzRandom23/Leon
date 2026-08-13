@@ -477,9 +477,7 @@ class PluginManager:
                 def remove_listener(unsubscribe: Callable[[], bool] = unsubscribe) -> None:
                     unsubscribe()
 
-                committed.append(
-                    _RegistrationHandle("event", str(listener.name), remove_listener)
-                )
+                committed.append(_RegistrationHandle("event", str(listener.name), remove_listener))
             for action in actions:
                 isolated_action = _isolated_action(action)
                 self._actions.register(isolated_action)
