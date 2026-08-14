@@ -13,6 +13,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from jarvis.core.permissions import PermissionPolicy
+from jarvis.utils.dotenv import load_env_file_from_default_locations
 
 
 class ConfigError(ValueError):
@@ -795,6 +796,8 @@ def load_config(
     """
 
     environment = os.environ if env is None else env
+    if env is None:
+        load_env_file_from_default_locations()
     configured_path = path if path is not None else environment.get("JARVIS_CONFIG_FILE")
     explicit = configured_path is not None
     config_path = (
