@@ -99,7 +99,7 @@ runtime will work.
 | `jarvis gui` | Start the optional PySide6 desktop interface |
 | `jarvis tasks list [--status ...]` | List persistent reminders |
 | `jarvis tasks missed` | List scheduled reminders whose due time has passed |
-| `jarvis tasks add --message TEXT (--at ISO_DATETIME | --in-minutes N) [--timezone ZONE]` | Add a one-time reminder |
+| `jarvis tasks add --message TEXT (--at ISO_DATETIME \| --in-minutes N) [--timezone ZONE]` | Add a one-time reminder |
 | `jarvis tasks cancel ID --message TEXT` | Cancel the matching reminder after permission review |
 | `jarvis tasks delete ID --message TEXT` | Permanently delete the matching reminder after confirmation |
 | `jarvis memory list/search/delete/clear` | Inspect or delete explicit memory through permissioned actions |
